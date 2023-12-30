@@ -1,3 +1,14 @@
+```
+cargo scaffold DAY --download
+cargo download DAY
+cargo solve DAY
+cargo solve DAY --bin PART
+cargo solve DAY --submit PART
+cargo test DAY
+cargo test DAY --bin PART
+cargo read DAY
+```
+
 <img src="./.assets/christmas_ferris.png" width="164">
 
 # 🎄 Advent of Code {year}
