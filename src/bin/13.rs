@@ -3,17 +3,21 @@ use itertools::Itertools;
 advent_of_code::solution!(13);
 
 pub fn part_one(input: &str) -> Option<u32> {
+    solve(input, 0, 0)
+}
+
+pub fn part_two(input: &str) -> Option<u32> {
+    solve(input, 1, 1)
+}
+
+fn solve(input: &str, max_off: usize, max_off_cnt: u32) -> Option<u32> {
     let mut ans = 0;
 
     let arrays = get_arrays(input);
     for array in arrays {
-        ans += find_mirror_val(array);
+        ans += find_mirror_val(array, max_off, max_off_cnt);
     }
     Some(ans)
-}
-
-pub fn part_two(input: &str) -> Option<u32> {
-    None
 }
 
 fn get_arrays(input: &str) -> Vec<Vec<Vec<char>>> {
@@ -32,26 +36,42 @@ fn get_arrays(input: &str) -> Vec<Vec<Vec<char>>> {
     arrays
 }
 
-fn find_mirror_val(mut array: Vec<Vec<char>>) -> u32 {
-    if let Some(i) = find_mirror_idx(&array) {
+fn find_mirror_val(mut array: Vec<Vec<char>>, max_off: usize, max_off_cnt: u32) -> u32 {
+    if let Some(i) = find_mirror_idx(&array, max_off, max_off_cnt) {
         ((i + 1) * 100) as u32
     } else {
         array = transpose(array);
-        let i = find_mirror_idx(&array).unwrap();
+        let i = find_mirror_idx(&array, max_off, max_off_cnt).unwrap();
         (i + 1) as u32
     }
 }
 
-fn find_mirror_idx(array: &Vec<Vec<char>>) -> Option<usize> {
-    (0..array.len() - 1).find(|&i| array[i] == array[i + 1] && is_mirrored(array, i))
+fn find_mirror_idx(array: &Vec<Vec<char>>, max_off: usize, max_off_cnt: u32) -> Option<usize> {
+    (0..array.len() - 1).find(|&i| {
+        let result = is_mirrored(array, i, max_off, max_off_cnt);
+        if max_off == 0 {
+            result
+        } else {
+            result && !is_mirrored(array, i, 0, 0)
+        }
+    })
 }
 
-fn is_mirrored(array: &Vec<Vec<char>>, i: usize) -> bool {
+fn is_mirrored(array: &Vec<Vec<char>>, i: usize, max_off: usize, max_off_cnt: u32) -> bool {
     let first = (0..=i).rev().map(|i| &array[i]);
     let second = (i + 1..array.len()).map(|i| &array[i]);
+    let mut off_cnt = 0;
     for (l1, l2) in std::iter::zip(first, second) {
-        if l1 != l2 {
-            return false;
+        let off = how_many_off(l1, l2);
+        match off {
+            0 => continue,
+            _ if off <= max_off => {
+                off_cnt += 1;
+                if off_cnt > max_off_cnt {
+                    return false;
+                }
+            }
+            _ => return false,
         }
     }
     true
@@ -64,6 +84,13 @@ where
     (0..array[0].len())
         .map(|i| array.iter().map(|row| row[i].clone()).collect_vec())
         .collect_vec()
+}
+
+fn how_many_off<T>(a1: &Vec<T>, a2: &Vec<T>) -> usize
+where
+    T: PartialEq,
+{
+    std::iter::zip(a1, a2).filter(|(c1, c2)| c1 != c2).count()
 }
 
 #[cfg(test)]
@@ -79,7 +106,7 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(400));
     }
 
     #[test]
